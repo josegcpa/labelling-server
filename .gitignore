@@ -1,2 +1,4 @@
 image-labelling
 project/__pycache__
+project/db.sqlite
+image_database.sqlite
