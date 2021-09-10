@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="column is-4 is-offset-4">
+    <h3 class="title">{% block title %}Sign up{% endblock %}</h3>
+    <div class="box">
+        <form method="post" action="/signup">
+            <div class="field form-group">
+                <label for="UserEmail">Email address</label>
+                <input type="email" name="email" class="form-control" id="UserEmail" placeholder="email" autofocus="">
+            </div>
+
+            <div class="field form-group">
+                <label for="UserName">Name</label>
+                <input type="text" name="name" class="form-control" id="UserName" placeholder="name" autofocus="">
+            </div>
+
+            <div class="field form-group">
+                <label for="Institute">Institute</label>
+                <input type="text" name="institute" class="form-control" id="Institute" placeholder="institute" autofocus="">
+            </div>
+
+            <div class="field form-group">
+                <label for="UserPassword">Password</label>
+                <input type="password" name="password" class="form-control" id="UserPassword" placeholder="password" autofocus="">
+            </div>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+              <div class="alert alert-danger">
+                    {{ messages[0] }}.
+                </div>
+            {% endif %}
+            {% endwith %}
+            <button type="submit" class="btn btn-primary">Sign up</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

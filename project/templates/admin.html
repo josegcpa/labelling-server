@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">
+    {% block title %}Admin{% endblock %}
+</h1>
+<div>
+  <table class="table">
+    <thead class="thead-light">
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Name</th>
+        <th scope="col">Institute</th>
+        <th scope="col">E-mail</th>
+        <th scope="col">Authorised</th>
+        <th scope="col">Admin</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in user_list %}
+        <tr>
+          <th scope="row">{{ user.id }}</th>
+          <td>{{ user.name }}</td>
+          <td>{{ user.institute }}</td>
+          <td>{{ user.email }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('admin.toggle_authorisation') }}">
+              <input type="hidden" name="user_id" value="{{ user.id }}">
+              {{ user.is_authorised }} <button class="btn btn-primary btn-sm">Change</button>
+            </form>
+          </td>
+          <td>
+            <form method="POST" action="{{ url_for('admin.toggle_admin') }}">
+              <input type="hidden" name="user_id" value="{{ user.id }}">
+              {{ user.is_admin }} <button class="btn btn-primary btn-sm">Change</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+{% endblock %}

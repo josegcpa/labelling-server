@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">
+  {% block title %}All white blood cells{% endblock %}
+</h1>
+<div>
+    <div class="container">
+      <table class="table">
+        <thead class="thead-light">
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Image</th>
+            <th scope="col">Labels</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in image_dict %}
+            <tr>
+              <th scope="row">{{ i }}</th>
+              <td>
+                <img height="200px" width="200px" style="vertical-align: middle;display:inline-block;" id="cell" class="w-auto card-img-top smallimg mx-auto image" src="data:image/png;base64,{{ image_dict[i].image }}">
+              </td>
+              <td>{{ image_dict[i].labels }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+</div>
+
+{% endblock %}
