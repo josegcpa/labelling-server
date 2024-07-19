@@ -47,8 +47,8 @@
                           Label images
                       </a>
                       <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                              <a href="{{ url_for('image.images',page=1) }}" class="dropdown-item"><b>Label cells</b></a>
-                              <a href="{{ url_for('image.images_all') }}" class="dropdown-item">All labelled cells</a>
+                              <a href="{{ url_for('image.images',page=1) }}" class="dropdown-item"><b>Label images</b></a>
+                              <a href="{{ url_for('image.images_all') }}" class="dropdown-item">All labelled images</a>
                       </div>
                   </li>
                 </ul>
@@ -57,7 +57,7 @@
             <div class="collapse navbar-collapse justify-content-end">
                 {% if current_user.is_authenticated %}
                     <div style="padding-right:10px">{{ current_user.name }}</div>
-                    <span class="badge badge-info">Number of labelled cells: {{ current_user.n_cells }}</span>
+                    <span class="badge badge-info">Number of labelled images: {{ current_user.n_cells }}</span>
                 {% else %}
 
                 {% endif %}
