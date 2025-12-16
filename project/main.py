@@ -3,7 +3,8 @@ from flask_login import login_required, current_user
 from . import db,get_db_name
 import sqlite3
 from random import shuffle
-from .classification_hierarchies import *
+from .classification_hierarchies import label_hierarchy, labels_dict
+
 
 conn_images = sqlite3.connect(get_db_name())
 
