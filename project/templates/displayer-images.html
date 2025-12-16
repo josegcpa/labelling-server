@@ -1,90 +1,120 @@
 {% extends "base.html" %}
 
 {% block content %}
+
 <h1 class="title">
   {% block title %}Label images{% endblock %}
-  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="grey" class="bi bi-question-circle" viewBox="0 0 16 16" id="help-circle">
-    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-    <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="grey" class="bi bi-question-circle"
+    viewBox="0 0 16 16" id="help-circle">
+    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+    <path
+      d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z" />
   </svg>
 </h1>
 <div>
-    <div class="col-md-12 text-center">
-        <h3 style="padding:15px;">Page {{ page }} of {{ max_page }}</h3>
-    </div>
-    <div class="container">
+  <div class="col-md-12 text-center">
+    <h3 style="padding:15px;">Page {{ page }} of {{ max_page }}</h3>
+  </div>
+  <div class="container">
     {% set i = n_rows %}
     {% set j = n_cols %}
     {% for col_id in range(i) %}
-        <div class="row">
-        {% for row_id in range(j) %}
-          {% set idx = col_id*j+row_id %}
-          {% if image_blobs[idx] != 0 %}
-            <div class="col text-center" style="height:250px;width:140px;">
-              {% if idx > -1 %}
-                <div class="card text-center" style="height:220px;width:260px">
-                  <div style="width:100%;height:180px;display:flex;align-items:center;justify-content:center;">
-                  <img height="140px" width="140px" style="vertical-align: middle;display:inline-block;" id="image{{ image_idxs[idx] }}" class="w-auto card-img-top smallimg mx-auto image" src="data:image/png;base64,{{ image_blobs[idx] }}">
-                  </div>
-                  <div style="height:60px" class="card-body" id="label{{ image_idxs[idx] }}">
-                    <select class="form-control form-control-sm" id="label_form{{ image_idxs[idx] }}">
-                      <option value='none'>--------</option>
-                      {% for element in image_hierarchy %}
-                        {% if element.is_group == true %}
-                          <optgroup label="{{ element.name }}">
-                            {% for label in element.elements %}
-                              <option value="{{ label }}">{{ element.elements[label] }}</option>
-                            {% endfor %}
-                          </optgroup>
-                        {% else %}
-                          {% for label in element.elements %}
-                            <option value="{{ label }}">{{ element.elements[label] }}</option>
-                          {% endfor %}
-                        {% endif %}
-                      {% endfor %}
-                    </select>
-                  </div>
-                </div>
-              {% endif %}
+    <div class="row">
+      {% for row_id in range(j) %}
+      {% set idx = col_id*j+row_id %}
+      {% if image_blobs[idx] != 0 %}
+      <div class="col text-center" style="height:250px; width:140px;">
+        {% if idx > -1 %}
+        <div class="card text-center" style="height:220px; width:260px">
+          <div style="width:100%; height:180px; display:flex; align-items:center; justify-content:center;">
+            <div style="height: 140px; width: 140px; position: relative;">
+              <div class="positioning"></div>
+              <img height="140px" width="140px" style="vertical-align: middle;display:inline-block;"
+                id="image{{ image_idxs[idx] }}" class="w-auto card-img-top smallimg mx-auto image"
+                src="data:image/png;base64,{{ image_blobs[idx] }}">
             </div>
-          {% endif %}
+          </div>
+          <div style="height:60px" class="card-body" id="label{{ image_idxs[idx] }}">
+            <select class="form-control form-control-sm" id="label_form{{ image_idxs[idx] }}">
+              <option value='none'>--------</option>
+              {% for element in image_hierarchy %}
+              {% if element.is_group == true %}
+              <optgroup label="{{ element.name }}">
+                {% for label in element.elements %}
+                <option value="{{ label }}">{{ element.elements[label] }}</option>
+                {% endfor %}
+              </optgroup>
+              {% else %}
+              {% for label in element.elements %}
+              <option value="{{ label }}">{{ element.elements[label] }}</option>
+              {% endfor %}
+              {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        {% endif %}
+        </div>
+        {% endif %}
         {% endfor %}
         </div>
     {% endfor %}
-    </div>
-    <div style="padding:15px;" class="col-md-12 text-center">
-        <div class="btn-group" role="group" aria-label="Basic example">
-        {% if page == 1 %}
-            <button type="button" class="btn btn-secondary disabled">Previous page</button>
+  </div>
+  <div style="padding:15px;" class="text-center col-md-12">
+    <div class="btn-group" role="group" aria-label="Button group back">
+      {% if page == 1 %}
+        <a type="button" class="btn btn-info disabled">First page</a>
+        <a type="button" class="btn btn-secondary disabled">Previous page</a>
         {% else %}
-            <a href="/images={{ page - 1 }}"><button type="button" class="btn btn-secondary">Previous page</button></a>
+        <a type="button" class="btn btn-info" href="/images=1">First page</a>
+        <a type="button" class="btn btn-secondary" href="/images={{ page - 1 }}">Previous page</a>
         {% endif %}
+    </div>
 
-        {% if page < max_page %}
-            <a href="/images={{ page + 1 }}"><button type="button" class="btn btn-secondary">Next page</button></a>
-        {% else %}
-            <button type="button" class="btn btn-secondary disabled">Next page</button>
+    <div class="btn-group" role="group" aria-label="Button group last with label">
+      <a type="button" class="btn btn-success" href="/images={{ first_no_label }}">Last with label</a>
+    </div>
+    
+    <div class="btn-group" role="group" aria-label="Button group forward">
+      {% if page < max_page %}
+        <a type="button" class="btn btn-secondary" href="/images={{ page + 1 }}">Next page</a>
+        <a type="button" class="btn btn-info" href="/images={{ max_page }}">Last page</a>
+      {% else %}
+        <a type="button" class="btn btn-secondary disabled">Next page</a>
+        <a type="button" class="btn btn-info disabled">Last page</a>
         {% endif %}
         </div>
-    </div>
+        </div>
 
-    <div class="container text-center" style="padding-bottom:30px">
+  <div class="container text-center" style="padding-bottom:30px">
     Go to page:
     <select class="form-control form-control-sm" id="change-page" style="width:10%;margin:0 auto">
       {% for i in range(1,max_page+1) %}
-        <option value="{{i}}">{{i}}</option>
+      <option value="{{i}}">{{i}}</option>
       {% endfor %}
     </select>
-    </div>
+  </div>
 
-    <div class="jumbotron jumbotron-fluid" id="help-text" style="visibility:hidden;">
-      <div class="container">
-        <h1 class="display-4">Help</h1>
-        <p class="lead">Just label stuff!</p>
-        <h4>A few examples (you can add your own in `displayer-images.html`)</h4>
-        <br>
+  <div class="jumbotron jumbotron-fluid" id="help-text" style="visibility:hidden;">
+    <div class="container">
+      <h1 class="display-4">Help</h1>
+      <p class="lead">Please use the dropdown menu underneath each image to select the label that best represents the
+        cell identified by a green dot.</p>
+      
+      <p class="lead">Labelling options and criteria:</p>
+      <ol>
+        <li>Pattern I - for KIT staining pattern I</li>
+        <li>Pattern II - for KIT staining pattern II</li>
+        <li>Pattern III - for KIT staining pattern III</li>
+        <li>Undetermined - when it is difficult/impossible to exactly determine the KIT staining pattern</li>
+        <li>Discard - Unstained mast cells, other cells, stroma and artifacts</li>
+      </ol>
+      <em>Note: In KIT staining pattern II cells the green dot often does not fall on top of the nuclei. In those cases,
+        if the green point falls on staining foci typical of pattern II and the respective nuclei is near, please
+        classify it as pattern II.</em>
+      <br>
       </div>
-    </div>
+      </div>
 </div>
 
 <script>
@@ -92,48 +122,48 @@
   const image_idxs = {{ image_idxs | tojson }}
   var clicked = false;
   var help = d3.select('#help-text')
-  .style('position',"absolute")
-  .style('margin','auto')
-  .style('top',"30%")
+    .style('position', "absolute")
+    .style('margin', 'auto')
+    .style('top', "30%")
   var help_circle = d3.select('#help-circle')
   help_circle
-  .on("mouseover",function() {
-    help
-    .style("opacity",0)
-    .style("visibility","visible")
-    .transition()
-    .duration(300)
-    .style("opacity",1)
-  })
-  .on("mouseout",function() {
-    help
-    .transition()
-    .duration(300)
-    .style("opacity",0)
-    help
-    .transition()
-    .delay(300)
-    .style("visibility","hidden")
-  })
+    .on("mouseover", function () {
+      help
+        .style("opacity", 0)
+        .style("visibility", "visible")
+        .transition()
+        .duration(300)
+        .style("opacity", 1)
+    })
+    .on("mouseout", function () {
+      help
+        .transition()
+        .duration(300)
+        .style("opacity", 0)
+      help
+        .transition()
+        .delay(300)
+        .style("visibility", "hidden")
+    })
 
   var idx = 0
   var label = 0
-  for (i=0; i<labels.length;i++) {
+    for (i = 0; i < labels.length; i++) {
       idx = image_idxs[i]
       label = labels[i]
       $('#label' + idx + " select").val(label)
-      $('#label' + idx + " select").change(function(e){
-        var x = this.value;
-        var form_id = this.id
-        $.post( "/images_label", {
-          label: x,
-          form_id: form_id
-        });
+    $('#label' + idx + " select").change(function (e) {
+      var x = this.value;
+      var form_id = this.id
+      $.post("/images_label", {
+        label: x,
+        form_id: form_id
+      });
     });
   }
   $('#change-page').val({{ page }})
-  $('#change-page').change(function(e){
-    window.location.href="/images="+$('#change-page').val()
+    $('#change-page').change(function (e) {
+      window.location.href = "/images=" + $('#change-page').val()
   })
 </script>
 
