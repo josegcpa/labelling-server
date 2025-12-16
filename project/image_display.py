@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request
 from flask_login import login_required, current_user
 from . import db,get_db_name
-from .classification_hierarchies import *
+from .classification_hierarchies import label_hierarchy, labels_dict
 from .models import User
 import sqlite3
 
@@ -18,6 +18,16 @@ def update_n_labelled_images():
         user = User.query.filter_by(email=current_user.email).first()
         user.n_cells = len(idxs_labels)
     db.session.commit()
+    
+def get_first_with_no_label():
+    user_id = current_user.id
+    with sqlite3.connect(get_db_name()) as conn:
+        idxs = conn.execute(
+            "SELECT picture_id FROM labels WHERE user_id = :user_id", 
+            {"user_id": user_id})
+    idxs = [x[0] for x in idxs]
+    return max(idxs)
+        
 
 def extract_images(conn,image_labels):
     idxs_labels = conn.execute(
@@ -38,12 +48,14 @@ def extract_images(conn,image_labels):
             ','.join(idxs)
         )).fetchall()
 
-    o = [x[0].decode('utf-8') for x in out]
+    o = {str(x[1]): x[0].decode('utf-8') for x in out}
+    with open("log.txt", "w") as n:
+        n.write(str(o.keys()))
     output_dict = {}
 
-    for i,img in zip(idxs,o):
+    for i in idxs:
         output_dict[i] = {
-            'image':img,
+            'image':o[i],
             'labels':[image_labels[x] for x in idx2labels[i] if x != 'none']
         }
     return output_dict
@@ -142,6 +154,7 @@ def images(page):
     names = [x[1] for x in images]
 
     labels = [extract_label(conn_images,i,labels_dict) for i in idxs]
+    first_no_label = get_first_with_no_label() // (n_cols * n_rows)
 
     return render_template(
         'displayer-images.html',
@@ -154,6 +167,7 @@ def images(page):
         names=names,
         labels=labels,
         image_hierarchy=label_hierarchy,
+        first_no_label=first_no_label,
         image_idxs=idxs)
 
 @image_display.route('/images-all')
