@@ -19,7 +19,11 @@
             <tr>
               <th scope="row">{{ i }}</th>
               <td>
-                <img height="200px" width="200px" style="vertical-align: middle;display:inline-block;" id="cell" class="w-auto card-img-top smallimg mx-auto image" src="data:image/png;base64,{{ image_dict[i].image }}">
+                <div style="height: 200px; width: 200px; position: relative;">
+                  <div class="positioning"></div>
+                  <img height="200px" width="200px" style="vertical-align: middle;display:inline-block;" id="cell" class="w-auto card-img-top smallimg mx-auto image" 
+                    src="data:image/png;base64,{{ image_dict[i].image }}">
+                </div>
               </td>
               <td>{{ image_dict[i].labels }}</td>
             </tr>
