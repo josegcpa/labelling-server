@@ -49,8 +49,6 @@ def extract_images(conn,image_labels):
         )).fetchall()
 
     o = {str(x[1]): x[0].decode('utf-8') for x in out}
-    with open("log.txt", "w") as n:
-        n.write(str(o.keys()))
     output_dict = {}
 
     for i in idxs:
