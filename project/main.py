@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, session
 from flask_login import login_required, current_user
 from . import db,get_db_name
 import sqlite3
@@ -45,3 +45,15 @@ def profile():
         return render_template('profile.html',
                                name=current_user.name,
                                blobs_labels=blobs_labels)
+
+@main.app_context_processor
+def inject_globals():
+    with sqlite3.connect(get_db_name()) as conn_images:
+        rows = conn_images.execute(
+            "SELECT DISTINCT collection FROM images WHERE collection IS NOT NULL ORDER BY collection;"
+        ).fetchall()
+    collections = [r[0] for r in rows if r[0] is not None]
+    return {
+        "collection": session.get("collection"),
+        "collections": collections,
+    }
