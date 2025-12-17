@@ -64,25 +64,25 @@
   <div style="padding:15px;" class="grid-of-buttons text-center col-md-12">
     <div class="btn-group" role="group" aria-label="Button group back">
       {% if page == 1 %}
-        <a type="button" class="btn btn-info disabled">&lt;&lt;</a>
-        <a type="button" class="btn btn-secondary disabled">&lt;</a>
+        <a type="button" class="btn btn-extreme disabled">&lt;&lt;</a>
+        <a type="button" class="btn btn-direction disabled">&lt;</a>
         {% else %}
-        <a type="button" class="btn btn-info" href="/images=1">&lt;&lt;</a>
-        <a type="button" class="btn btn-secondary" href="/images={{ page - 1 }}">&lt;</a>
+        <a type="button" class="btn btn-extreme" href="/images=1">&lt;&lt;</a>
+        <a type="button" class="btn btn-direction" href="/images={{ page - 1 }}">&lt;</a>
         {% endif %}
     </div>
 
     <div class="btn-group" role="group" aria-label="Button group last with label">
-      <a type="button" class="btn btn-success" href="/images={{ first_no_label }}">Last with label</a>
+      <a type="button" class="btn btn-last" href="/images={{ first_no_label }}">Last with label</a>
     </div>
     
     <div class="btn-group" role="group" aria-label="Button group forward">
       {% if page < max_page %}
-        <a type="button" class="btn btn-secondary" href="/images={{ page + 1 }}">&gt;</a>
-        <a type="button" class="btn btn-info" href="/images={{ max_page }}">&gt;&gt;</a>
+        <a type="button" class="btn btn-direction" href="/images={{ page + 1 }}">&gt;</a>
+        <a type="button" class="btn btn-extreme" href="/images={{ max_page }}">&gt;&gt;</a>
       {% else %}
-        <a type="button" class="btn btn-secondary disabled">&gt;</a>
-        <a type="button" class="btn btn-info disabled">&gt;&gt;</a>
+        <a type="button" class="btn btn-direction disabled">&gt;</a>
+        <a type="button" class="btn btn-extreme disabled">&gt;&gt;</a>
         {% endif %}
         </div>
         </div>

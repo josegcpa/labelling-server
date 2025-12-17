@@ -1,0 +1,179 @@
+:root {
+    --primary-color: #b497d6;
+    --secondary-color: #dee0f7;
+    --background-color: #f8f9fa;
+    --text-color: #333;
+    --border-color: #33202a;
+    --badge-primary-color: var(--primary-color);
+    --badge-secondary-color: var(--secondary-color);
+    --badge-background-color: #000000;
+    --badge-border-color: #000000;
+    --badge-shadow-color: #5f5566;
+}
+
+.btn-direction {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: var(--text-color);
+}
+
+.btn-extreme {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+.btn-last {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+.btn-direction, .btn-extreme, .btn-last {
+    box-shadow: 0 1px 2px var(--badge-shadow-color);
+}
+
+.btn-extreme:hover, .btn-direction:hover, .btn-last:hover {
+    color: var(--text-color);
+    box-shadow: 0 2px 4px var(--badge-shadow-color);
+}
+
+h1 {
+    font-size: xx-large;
+}
+.image:hover {
+    transform: scale(1.5, 1.5);
+    transition: 0.3s;
+}
+
+.title {
+    padding-top: 15px;
+}
+
+footer {
+    text-align: center;
+    position: absolute;
+    bottom: 0px;
+    color: grey;
+    width: 100%
+}
+
+body {
+    margin-bottom: 50px;
+}
+
+.positioning {
+    position: absolute;
+    right: 49%;
+    bottom: 49%;
+    background-color: greenyellow;
+    padding: 2px;
+}
+
+.card-text-center {
+    height:220px; 
+    width:100%;
+}
+
+.image-container {
+    height: 140px; 
+    width:100%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    margin-top: 12px;
+    position: relative;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.grid-of-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+}
+
+@media screen and (max-width: 768px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+}
+
+@media screen and (max-width: 400px) {
+    .grid {
+        grid-template-columns: repeat(1, 1fr);
+    }
+    .grid-of-buttons {
+        flex-direction: column;
+    }
+}
+
+.title-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 15px;
+}
+
+.pages {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: right;
+}
+
+@media screen and (max-width: 500px) {
+    .title-header {
+        flex-direction: column;
+    }
+    .pages {
+        text-align: left;
+    }
+}
+
+.btn {
+    min-width: 60px;
+}
+
+.jumbotron {
+    left: 10%;
+    width: 80%;
+}
+
+.badge-holder {
+    display: flex;
+    justify-content: flex-end;
+    position: absolute;
+    right: 6px;
+}
+
+.badge-base {
+    text-align: right;
+    padding: 4px 8px 4px 8px;
+    margin: 6px;
+    font-size: small;
+    border-radius: 12px;
+    box-shadow: 0 1px 1px var(--badge-shadow-color);
+}
+.badge-number-of-cells {
+    background-color: var(--secondary-color);
+    color: black;
+}
+
+.badge-active-collection {
+    background-color: #ff7300d0;
+    color: white;
+}
+
+.currently-selected {
+    background-color: #EEEEEE;
+    pointer-events: none;
+    cursor: not-allowed;
+}

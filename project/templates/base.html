@@ -21,118 +21,7 @@
         integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
         crossorigin="anonymous"></script>
     <script src="https://d3js.org/d3.v6.min.js"></script>
-
-    <style>
-        h1 {
-            font-size: xx-large;
-        }
-        .image:hover {
-            transform: scale(1.5, 1.5);
-            transition: 0.3s;
-        }
-
-        .title {
-            padding-top: 15px;
-        }
-
-        footer {
-            text-align: center;
-            position: absolute;
-            bottom: 0px;
-            color: grey;
-            width: 100%
-        }
-
-        body {
-            margin-bottom: 50px;
-        }
-
-        .positioning {
-            position: absolute;
-            right: 49%;
-            bottom: 49%;
-            background-color: greenyellow;
-            padding: 2px;
-        }
-
-        .card-text-center {
-            height:220px; 
-            width:100%;
-        }
-
-        .image-container {
-            height: 140px; 
-            width:100%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            margin-top: 12px;
-            position: relative;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-        }
-
-        .grid-of-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            align-items: center;
-            flex-direction: row;
-        }
-
-        @media screen and (max-width: 768px) {
-            .grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-        }
-        
-        @media screen and (max-width: 400px) {
-            .grid {
-                grid-template-columns: repeat(1, 1fr);
-            }
-            .grid-of-buttons {
-                flex-direction: column;
-            }
-        }
-
-        .title-header {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            padding: 15px;
-        }
-
-        .pages {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            text-align: right;
-        }
-
-        @media screen and (max-width: 500px) {
-            .title-header {
-                flex-direction: column;
-            }
-            .pages {
-                text-align: left;
-            }
-        }
-
-        .btn {
-            min-width: 60px;
-        }
-
-        .jumbotron {
-            left: 10%;
-            width: 80%;
-        }
-
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
 </head>
 
 <body>
@@ -158,8 +47,7 @@
                             <a class="dropdown-item" href="collections=null">All images</a>
                             {% for curr_collection in collections %}
                             {% if curr_collection == collection %}
-                            <a class="dropdown-item" href="collections={{ curr_collection }}" aria-disabled="true" disabled>{{
-                                curr_collection }}</a>
+                            <a class="dropdown-item currently-selected" aria-disabled="true" disabled>{{ curr_collection }}</a>
                             {% else %}
                             <a class="dropdown-item" href="collections={{ curr_collection }}">{{ curr_collection }}</a>
                             {% endif %}
@@ -177,7 +65,20 @@
                 </ul>
 
                 {% if current_user.is_authenticated %}
-                <span class="badge badge-info">{{ current_user.name }} labelled {{ current_user.n_cells }} images</span>
+                <div class="badge-holder">
+                    <div class="badge-base badge-number-of-cells">
+                        {{ current_user.name }} labelled {{ current_user.n_cells }} images
+                    </div>
+                    {% if collection %}
+                    <div class="badge-base badge-active-collection">
+                        Active collection: <b>{{ collection }}</b>
+                    </div>
+                    {% else %}
+                    <div class="badge-base badge-active-collection">
+                        Collection: all images
+                    </div>
+                    {% endif %}
+                </div>
                 {% else %}
 
                 {% endif %}
