@@ -89,6 +89,9 @@ def extract_images(conn, image_labels, collection: str | None):
 
     for i in idxs:
         if i in o:
+            l = [image_labels[x] for x in idx2labels[i] if x != 'none']
+            if len(l) == 0:
+                continue
             output_dict[i] = {
                 'image': o[i],
                 'labels': [image_labels[x] for x in idx2labels[i] if x != 'none']
@@ -212,9 +215,9 @@ def images(page):
 @login_required
 def images_all():
     collection = session.get("collection", None)
+    if current_user.is_authorised == False:
+        return no_authorisation()
     with sqlite3.connect(get_db_name()) as conn_images:
-        if current_user.is_authorised == False:
-            return no_authorisation()
         image_dict = extract_images(conn_images, labels_dict, collection)
 
         return render_template('all-images.html',
