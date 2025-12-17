@@ -151,13 +151,14 @@ body {
     display: flex;
     justify-content: flex-end;
     position: absolute;
-    right: 6px;
+    right: 8px;
+    gap: 8px;
+    margin: 8px 0px 8px 0px;
 }
 
 .badge-base {
     text-align: right;
     padding: 4px 8px 4px 8px;
-    margin: 6px;
     font-size: small;
     border-radius: 12px;
     box-shadow: 0 1px 1px var(--badge-shadow-color);
@@ -176,4 +177,19 @@ body {
     background-color: #EEEEEE;
     pointer-events: none;
     cursor: not-allowed;
+}
+
+@media screen and (max-width: 768px) {
+    .badge-base {
+        position: relative
+    }
+
+    .badge-holder {
+        position: relative;
+        right: auto;
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: space-between;
+    }
+
 }

@@ -54,7 +54,6 @@
                             {% endfor %}
                         </div>
                     </li>
-                    <li><a href="{{ url_for('main.profile') }}" class="nav-link">Profile</a></li>
                     <li><a href="{{ url_for('auth.logout') }}" class="nav-link"
                             style="color: #8B0000;"><b>Logout</b></a></li>
                     {% else %}
@@ -66,16 +65,18 @@
 
                 {% if current_user.is_authenticated %}
                 <div class="badge-holder">
-                    <div class="badge-base badge-number-of-cells">
-                        {{ current_user.name }} labelled {{ current_user.n_cells }} images
-                    </div>
+                    <a href="{{ url_for('main.profile') }}">
+                        <div class="badge-base badge-number-of-cells">
+                            {{ current_user.name }} labelled {{ current_user.n_cells }} images
+                        </div>
+                    </a>
                     {% if collection %}
                     <div class="badge-base badge-active-collection">
                         Active collection: <b>{{ collection }}</b>
                     </div>
                     {% else %}
                     <div class="badge-base badge-active-collection">
-                        Collection: all images
+                        Active collection: none
                     </div>
                     {% endif %}
                 </div>
