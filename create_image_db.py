@@ -15,10 +15,12 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description='Create SQLite image database.')
-    parser.add_argument('--input_path',dest="input_path",type=str,
+    parser.add_argument('--input_path',dest="input_path",type=str, required=True,
                         help='path to folder containing images')
-    parser.add_argument('--output_path',dest="output_path",type=str,
+    parser.add_argument('--output_path',dest="output_path",type=str, required=True,
                         help='path to SQLite output')
+    parser.add_argument('--collection', dest='collection', type=str, required=True,
+                        help="sets image collection")
     parser.add_argument('--add_dot',dest="add_dot",action="store_true",
                         help='adds small green dot to center of image')
     parser.add_argument('--overwrite',dest="overwrite",action="store_true",
@@ -42,7 +44,8 @@ if __name__ == "__main__":
     create table if not exists images(
         id integer primary key autoincrement,
         picture blob,
-        name text);
+        name text,
+        collection text default null);
     '''
     conn.execute(sql)
 
@@ -65,6 +68,8 @@ if __name__ == "__main__":
     rng = np.random.default_rng(args.seed)
 
     i = 0
+    last_ablob = None
+    last_name = None
     images = sorted(glob(args.input_path + '/*'))
     rng.shuffle(images)
     for image_path in tqdm(images):
@@ -96,14 +101,18 @@ if __name__ == "__main__":
             image.save(bio,format='JPEG')
 
             ablob = base64.b64encode(bio.getvalue())
+            last_ablob = ablob
+            last_name = image_path
             sql = '''INSERT INTO images
-            (picture, name)
-            VALUES(?, ?);'''
-            conn.execute(sql,[sqlite3.Binary(ablob), image_path])
+            (picture, name, collection)
+            VALUES(?, ?, ?);'''
+            conn.execute(sql,[sqlite3.Binary(ablob), image_path, args.collection])
             conn.commit()
 
     sql = '''INSERT INTO metadata
     (number_of_images)
     VALUES(?);'''
-    conn.execute(sql,[i])
+    n_images = conn.execute("SELECT COUNT(*) FROM images;").fetchone()[0]
+    conn.execute("DELETE FROM metadata;")
+    conn.execute(sql,[n_images])
     conn.commit()

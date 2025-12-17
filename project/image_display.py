@@ -1,12 +1,42 @@
-from flask import Blueprint, render_template, redirect, url_for, request
+from flask import Blueprint, render_template, redirect, url_for, request, session
 from flask_login import login_required, current_user
 from . import db,get_db_name
 from .classification_hierarchies import label_hierarchy, labels_dict
 from .models import User
 import sqlite3
 
-n_cols = 4
-n_rows = 4
+n_images = 16
+
+with sqlite3.connect(get_db_name()) as conn_images:
+    rows = conn_images.execute(
+        "SELECT id, collection FROM images;"
+    ).fetchall()
+collection_count = {k[1]: 0 for k in rows}
+image_collection_correspondence = {k[1]: {} for k in rows}
+for row in rows:
+    curr_c = collection_count[row[1]]
+    image_collection_correspondence[row[1]][curr_c] = row[0]
+    collection_count[row[1]] += 1
+
+def get_collection_count(collection: str) -> int:
+    with sqlite3.connect(get_db_name()) as conn_images:
+        if collection is None:
+            ex = conn_images.execute("SELECT COUNT(*) FROM images")
+        else:
+            ex = conn_images.execute(
+                "SELECT COUNT(*) FROM images WHERE collection = :collection;",
+                {"collection": collection},
+            )
+        row = ex.fetchone()
+    return int(row[0] if row is not None else 0)
+
+def get_unique_collections() -> list[str]:
+    with sqlite3.connect(get_db_name()) as conn_images:
+        rows = conn_images.execute(
+            "SELECT DISTINCT collection FROM images WHERE collection IS NOT NULL ORDER BY collection;"
+        ).fetchall()
+    collections = [r[0] for r in rows if r[0] is not None]
+    return collections
 
 def update_n_labelled_images():
     with sqlite3.connect(get_db_name()) as conn_images:
@@ -29,7 +59,7 @@ def get_first_with_no_label():
     return max(idxs)
         
 
-def extract_images(conn,image_labels):
+def extract_images(conn, image_labels, collection: str | None):
     idxs_labels = conn.execute(
         "SELECT picture_id,label FROM labels"
         ).fetchall()
@@ -43,36 +73,48 @@ def extract_images(conn,image_labels):
             idx2labels[x] = [y]
     idxs = list(idx2labels.keys())
 
-    out = conn.execute(
-        "SELECT picture,id FROM images WHERE id IN ({})".format(
+    if collection is not None:
+        sql_statement = "SELECT picture,id FROM images WHERE id IN ({}) AND collection = :collection".format(
             ','.join(idxs)
-        )).fetchall()
+        )
+        out = conn.execute(sql_statement, {'collection': collection}).fetchall()
+    else:
+        sql_statement = "SELECT picture,id FROM images WHERE id IN ({})".format(
+            ','.join(idxs)
+        )
+        out = conn.execute(sql_statement).fetchall()
 
     o = {str(x[1]): x[0].decode('utf-8') for x in out}
-    with open("log.txt", "w") as n:
-        n.write(str(o.keys()))
     output_dict = {}
 
     for i in idxs:
-        output_dict[i] = {
-            'image':o[i],
-            'labels':[image_labels[x] for x in idx2labels[i] if x != 'none']
-        }
+        if i in o:
+            l = [image_labels[x] for x in idx2labels[i] if x != 'none']
+            if len(l) == 0:
+                continue
+            output_dict[i] = {
+                'image': o[i],
+                'labels': [image_labels[x] for x in idx2labels[i] if x != 'none']
+            }
     return output_dict
 
-def extract_picture(conn,picture_id):
+def extract_picture(conn, picture_id: int, collection: str | None):
     with sqlite3.connect(get_db_name()) as conn_images:
-        sql = "SELECT picture, name FROM images WHERE id = :id"
-        param = {'id': picture_id}
+        if collection is not None:
+            sql = "SELECT picture, name FROM images WHERE id = :id AND collection = :collection"
+            param = {'id': picture_id, 'collection': collection}
+        else:
+            sql = "SELECT picture, name FROM images WHERE id = :id"
+            param = {'id': picture_id}
         try:
             cur = conn_images.cursor()
-            cur.execute(sql,param)
+            cur.execute(sql, param)
             ablob, name = cur.fetchone()
             return ablob.decode('utf-8'),name
         except:
             return 0,0
 
-def extract_label(conn,picture_id,labels_dict):
+def extract_label(conn, picture_id, labels_dict):
     with sqlite3.connect(get_db_name()) as conn_images:
         sql = "SELECT label FROM labels WHERE picture_id = :picture_id AND user_id = :user_id"
         param = {
@@ -106,13 +148,6 @@ def insert_label(conn,picture_id,label):
     cur.execute(sql,param)
     db.session.commit()
 
-with sqlite3.connect(get_db_name()) as conn_images:
-    cur_images = conn_images.cursor()
-    n_images = cur_images.execute(
-        "SELECT COUNT(*) FROM images;").fetchone()[0]
-
-max_page_images = n_images // (n_cols * n_rows) + 1
-
 image_display = Blueprint('image', __name__)
 
 # No authorisation routing
@@ -139,28 +174,34 @@ def get_images_label():
 @image_display.route('/images=<page>')
 @login_required
 def images(page):
+    collection = session.get("collection", None)
+    if request.args.get('collection'):
+        collection = request.args.get('collection')
+    if collection == "null":
+        collection = None
     if current_user.is_authorised == False:
         return no_authorisation()
     page = int(page)
+    max_page_images = get_collection_count(collection) // n_images + 1
     if page > max_page_images:
         return redirect(url_for('image.images',page=str(max_page_images)))
     if page < 1:
         return redirect(url_for('image.images',page=str(1)))
-    page_offset = (page-1) * n_cols * n_rows
-    idxs = [i + page_offset for i in range(1,n_cols*n_rows+1)]
-    images = [extract_picture(conn_images,i)
+    page_offset = (page-1) * n_images
+    idxs = [i + page_offset for i in range(1, n_images+1)]
+    if collection is not None:
+        idxs = [image_collection_correspondence[collection].get(i, None) for i in idxs]
+    images = [extract_picture(conn_images, i, collection)
               for i in idxs]
     image_blobs = [x[0] for x in images]
     names = [x[1] for x in images]
 
     labels = [extract_label(conn_images,i,labels_dict) for i in idxs]
-    first_no_label = get_first_with_no_label() // (n_cols * n_rows)
+    first_no_label = get_first_with_no_label() // (n_images)
 
     return render_template(
         'displayer-images.html',
         name=current_user.name,
-        n_cols=n_cols,
-        n_rows=n_rows,
         image_blobs=image_blobs,
         page=page,
         max_page=max_page_images,
@@ -173,10 +214,20 @@ def images(page):
 @image_display.route('/images-all')
 @login_required
 def images_all():
+    collection = session.get("collection", None)
+    if current_user.is_authorised == False:
+        return no_authorisation()
     with sqlite3.connect(get_db_name()) as conn_images:
-        if current_user.is_authorised == False:
-            return no_authorisation()
-        image_dict = extract_images(conn_images,labels_dict)
+        image_dict = extract_images(conn_images, labels_dict, collection)
 
         return render_template('all-images.html',
                                image_dict=image_dict)
+
+@image_display.route('/collections=<collection>')
+@login_required
+def set_collection(collection):
+    if collection == "null":
+        session["collection"] = None
+    elif collection in get_unique_collections():
+        session["collection"] = collection
+    return redirect(url_for('image.images',page=str(1)))
