@@ -190,7 +190,7 @@ def images(page):
     page_offset = (page-1) * n_images
     idxs = [i + page_offset for i in range(1, n_images+1)]
     if collection is not None:
-        idxs = [image_collection_correspondence[collection].get(i, None) for i in idxs]
+        idxs = [image_collection_correspondence[collection].get(i - 1, None) for i in idxs]
     images = [extract_picture(conn_images, i, collection)
               for i in idxs]
     image_blobs = [x[0] for x in images]
