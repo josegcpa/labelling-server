@@ -1,22 +1,26 @@
+import sqlite3
 from flask import Blueprint, render_template, redirect, url_for, request, session
 from flask_login import login_required, current_user
 from . import db,get_db_name
 from .classification_hierarchies import label_hierarchy, labels_dict
 from .models import User
-import sqlite3
 
 n_images = 16
 
-with sqlite3.connect(get_db_name()) as conn_images:
-    rows = conn_images.execute(
-        "SELECT id, collection FROM images;"
-    ).fetchall()
-collection_count = {k[1]: 0 for k in rows}
-image_collection_correspondence = {k[1]: {} for k in rows}
-for row in rows:
-    curr_c = collection_count[row[1]]
-    image_collection_correspondence[row[1]][curr_c] = row[0]
-    collection_count[row[1]] += 1
+def get_image_collection_correspondence():
+    with sqlite3.connect(get_db_name()) as conn_images:
+        rows = conn_images.execute(
+            "SELECT id, collection FROM images;"
+        ).fetchall()
+    collection_count = {k[1]: 0 for k in rows}
+    icl = {k[1]: {} for k in rows}
+    for row in rows:
+        curr_c = collection_count[row[1]]
+        icl[row[1]][curr_c] = row[0]
+        collection_count[row[1]] += 1
+    return icl
+
+image_collection_correspondence = get_image_collection_correspondence()
 
 def get_collection_count(collection: str) -> int:
     with sqlite3.connect(get_db_name()) as conn_images:
@@ -174,6 +178,7 @@ def get_images_label():
 @image_display.route('/images=<page>')
 @login_required
 def images(page):
+    global image_collection_correspondence
     collection = session.get("collection", None)
     if request.args.get('collection'):
         collection = request.args.get('collection')
@@ -190,13 +195,17 @@ def images(page):
     page_offset = (page-1) * n_images
     idxs = [i + page_offset for i in range(1, n_images+1)]
     if collection is not None:
+        if collection not in image_collection_correspondence:
+            image_collection_correspondence = get_image_collection_correspondence()
         idxs = [image_collection_correspondence[collection].get(i - 1, None) for i in idxs]
-    images = [extract_picture(conn_images, i, collection)
-              for i in idxs]
-    image_blobs = [x[0] for x in images]
-    names = [x[1] for x in images]
+    with sqlite3.connect(get_db_name()) as conn_images:
+        images = [extract_picture(conn_images, i, collection)
+                  for i in idxs]
+        image_blobs = [x[0] for x in images]
+        names = [x[1] for x in images]
 
-    labels = [extract_label(conn_images,i,labels_dict) for i in idxs]
+    with sqlite3.connect(get_db_name()) as conn_images:
+        labels = [extract_label(conn_images,i,labels_dict) for i in idxs]
     first_no_label = get_first_with_no_label() // (n_images)
 
     return render_template(
