@@ -63,101 +63,153 @@ def get_first_with_no_label():
     return max(idxs)
         
 
-def extract_images(conn, image_labels, collection: str | None):
-    idxs_labels = conn.execute(
-        "SELECT picture_id,label FROM labels"
-        ).fetchall()
-    idxs = [str(x[0]) for x in idxs_labels]
-    labels = [x[1] for x in idxs_labels]
-    idx2labels = {}
-    for x,y in zip(idxs,labels):
-        if x in idx2labels:
-            idx2labels[x].append(y)
-        else:
-            idx2labels[x] = [y]
-    idxs = list(idx2labels.keys())
+def extract_images(conn, image_labels, collection: str | None, page: int = 1, per_page: int = 50):
+    if collection is not None:
+        count_sql = (
+            "SELECT COUNT(DISTINCT l.picture_id) "
+            "FROM labels l "
+            "JOIN images i ON i.id = l.picture_id "
+            "WHERE i.collection = ?"
+        )
+        total = conn.execute(count_sql, [collection]).fetchone()[0]
+    else:
+        count_sql = "SELECT COUNT(DISTINCT picture_id) FROM labels"
+        total = conn.execute(count_sql).fetchone()[0]
+
+    total = int(total or 0)
+    max_page = max(1, (total - 1) // per_page + 1) if total > 0 else 1
+    offset = (page - 1) * per_page
+    
+    if page < 1:
+        page = 1
+    if page > max_page:
+        page = max_page
 
     if collection is not None:
-        sql_statement = "SELECT picture,id FROM images WHERE id IN ({}) AND collection = :collection".format(
-            ','.join(idxs)
+        ids_sql = (
+            "SELECT DISTINCT l.picture_id "
+            "FROM labels l "
+            "JOIN images i ON i.id = l.picture_id "
+            "WHERE i.collection = ? "
+            "ORDER BY l.picture_id "
+            "LIMIT ? OFFSET ?"
         )
-        out = conn.execute(sql_statement, {'collection': collection}).fetchall()
+        rows = conn.execute(ids_sql, [collection, per_page, offset]).fetchall()
     else:
-        sql_statement = "SELECT picture,id FROM images WHERE id IN ({})".format(
-            ','.join(idxs)
+        ids_sql = (
+            "SELECT DISTINCT picture_id "
+            "FROM labels "
+            "ORDER BY picture_id "
+            "LIMIT ? OFFSET ?"
         )
-        out = conn.execute(sql_statement).fetchall()
+        rows = conn.execute(ids_sql, [per_page, offset]).fetchall()
 
-    o = {str(x[1]): x[0].decode('utf-8') for x in out}
-    output_dict = {}
+    picture_ids = [int(r[0]) for r in rows]
+    if not picture_ids:
+        return {}, total, max_page
 
-    for i in idxs:
-        if i in o:
-            l = [image_labels[x] for x in idx2labels[i] if x != 'none']
-            if len(l) == 0:
-                continue
-            output_dict[i] = {
-                'image': o[i],
-                'labels': [image_labels[x] for x in idx2labels[i] if x != 'none']
-            }
-    return output_dict
+    placeholders = ",".join(["?"] * len(picture_ids))
+    if collection is not None:
+        sql = (
+            f"SELECT l.picture_id, l.label, i.picture "
+            f"FROM labels l "
+            f"JOIN images i ON i.id = l.picture_id "
+            f"WHERE l.picture_id IN ({placeholders}) AND i.collection = ? AND l.label != 'none' "
+            f"ORDER BY l.picture_id"
+        )
+        params = [*picture_ids, collection]
+    else:
+        sql = (
+            f"SELECT l.picture_id, l.label, i.picture "
+            f"FROM labels l "
+            f"JOIN images i ON i.id = l.picture_id "
+            f"WHERE l.picture_id IN ({placeholders}) AND l.label != 'none' "
+            f"ORDER BY l.picture_id"
+        )
+        params = list(picture_ids)
 
-def extract_picture(conn, picture_id: int, collection: str | None):
-    with sqlite3.connect(get_db_name()) as conn_images:
-        if collection is not None:
-            sql = "SELECT picture, name FROM images WHERE id = :id AND collection = :collection"
-            param = {'id': picture_id, 'collection': collection}
-        else:
-            sql = "SELECT picture, name FROM images WHERE id = :id"
-            param = {'id': picture_id}
-        try:
-            cur = conn_images.cursor()
-            cur.execute(sql, param)
-            ablob, name = cur.fetchone()
-            return ablob.decode('utf-8'),name
-        except:
-            return 0,0
+    out_rows = conn.execute(sql, params).fetchall()
+    output_dict = {str(pid): {'image': None, 'labels': []} for pid in picture_ids}
 
-def extract_pictures(conn, picture_ids: list[int], collection: str | None):
-    with sqlite3.connect(get_db_name()) as conn_images:
-        if not picture_ids:
-            return []
+    for pid, label, imblob in out_rows:
+        pid = int(pid)
+        pid_key = str(pid)
+        if pid_key not in output_dict:
+            continue
+        if output_dict[pid_key]['image'] is None:
+            output_dict[pid_key]['image'] = imblob.decode('utf-8')
+        if label in image_labels:
+            output_dict[pid_key]['labels'].append(image_labels[label])
 
-        placeholders = ",".join(["?"] * len(picture_ids))
-        if collection is not None:
-            sql = f"SELECT id, picture, name FROM images WHERE id IN ({placeholders}) AND collection = ?"
-            params = [*picture_ids, collection]
-        else:
-            sql = f"SELECT id, picture, name FROM images WHERE id IN ({placeholders})"
-            params = list(picture_ids)
-        try:
-            cur = conn_images.cursor()
-            cur.execute(sql, params)
-            rows = cur.fetchall()
-            by_id = {int(r[0]): (r[1].decode('utf-8'), r[2]) for r in rows}
-            return [by_id.get(int(pid), (0, 0)) for pid in picture_ids]
-        except:
-            return []
+    output_dict = {k: v for k, v in output_dict.items() if v['image'] is not None and len(v['labels']) > 0}
+    return output_dict, total, max_page
 
-
-def extract_label(conn, picture_id, labels_dict):
-    with sqlite3.connect(get_db_name()) as conn_images:
-        sql = "SELECT label FROM labels WHERE picture_id = :picture_id AND user_id = :user_id"
-        param = {
-            'picture_id':picture_id,
-            'user_id':current_user.id}
+def extract_picture(conn_images, picture_id: int, collection: str | None):
+    if collection is not None:
+        sql = "SELECT picture, name FROM images WHERE id = :id AND collection = :collection"
+        param = {'id': picture_id, 'collection': collection}
+    else:
+        sql = "SELECT picture, name FROM images WHERE id = :id"
+        param = {'id': picture_id}
+    try:
         cur = conn_images.cursor()
-        cur = cur.execute(sql,param)
-        o = cur.fetchone()
+        cur.execute(sql, param)
+        ablob, name = cur.fetchone()
+        return ablob.decode('utf-8'),name
+    except:
+        return 0,0
 
-        if o is None:
-            o = "none"
-        else:
-            o = o[0]
-        if o not in labels_dict:
-            o = "none"
+def extract_pictures(conn_images, picture_ids: list[int], collection: str | None):
+    if not picture_ids:
+        return []
 
-        return o
+    placeholders = ",".join(["?"] * len(picture_ids))
+    if collection is not None:
+        sql = f"SELECT id, picture, name FROM images WHERE id IN ({placeholders}) AND collection = ?"
+        params = [*picture_ids, collection]
+    else:
+        sql = f"SELECT id, picture, name FROM images WHERE id IN ({placeholders})"
+        params = list(picture_ids)
+    try:
+        cur = conn_images.cursor()
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+        by_id = {int(r[0]): (r[1].decode('utf-8'), r[2]) for r in rows}
+        return [by_id.get(int(pid), (0, 0)) for pid in picture_ids]
+    except:
+        return []
+
+
+def extract_label(conn_images, picture_id, labels_dict):
+    return extract_labels(conn_images, [picture_id], labels_dict)[0]
+
+def extract_labels(conn_images, picture_ids: list[int | None], labels_dict):
+    if not picture_ids:
+        return []
+
+    valid_picture_ids = [int(pid) for pid in picture_ids if pid is not None]
+    if not valid_picture_ids:
+        return ["none" for _ in picture_ids]
+
+    placeholders = ",".join(["?"] * len(valid_picture_ids))
+    sql = f"SELECT picture_id, label FROM labels WHERE user_id = ? AND picture_id IN ({placeholders})"
+    try:
+        cur = conn_images.cursor()
+        rows = cur.execute(sql, [current_user.id, *valid_picture_ids]).fetchall()
+        by_id = {int(r[0]): r[1] for r in rows}
+    except:
+        by_id = {}
+
+    out = []
+    for pid in picture_ids:
+        if pid is None:
+            out.append("none")
+            continue
+        label = by_id.get(int(pid), "none")
+        if label not in labels_dict:
+            label = "none"
+        out.append(label)
+    return out
 
 def insert_label(conn,picture_id,label):
     sql = 'SELECT label FROM labels WHERE picture_id = :picture_id AND user_id = :user_id;'
@@ -217,8 +269,6 @@ def images(page):
     page_offset = (page-1) * n_images
     idxs = [i + page_offset for i in range(1, n_images+1)]
     if collection is not None:
-        if collection not in image_collection_correspondence:
-            image_collection_correspondence = get_image_collection_correspondence()
         idxs = [image_collection_correspondence[collection].get(i - 1, None) for i in idxs]
     with sqlite3.connect(get_db_name()) as conn_images:
         images = extract_pictures(conn_images, idxs, collection)
@@ -226,7 +276,7 @@ def images(page):
         names = [x[1] for x in images]
 
     with sqlite3.connect(get_db_name()) as conn_images:
-        labels = [extract_label(conn_images,i,labels_dict) for i in idxs]
+        labels = extract_labels(conn_images, idxs, labels_dict)
     first_no_label = get_first_with_no_label() // (n_images)
 
     return render_template(
@@ -247,11 +297,24 @@ def images_all():
     collection = session.get("collection", None)
     if current_user.is_authorised == False:
         return no_authorisation()
-    with sqlite3.connect(get_db_name()) as conn_images:
-        image_dict = extract_images(conn_images, labels_dict, collection)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 50, type=int)
+    if per_page < 1:
+        per_page = 50
+    elif per_page > 200:
+        per_page = 200
 
-        return render_template('all-images.html',
-                               image_dict=image_dict)
+    with sqlite3.connect(get_db_name()) as conn_images:
+        image_dict, total, max_page = extract_images(conn_images, labels_dict, collection, page=page, per_page=per_page)
+
+        return render_template(
+            'all-images.html',
+            image_dict=image_dict,
+            collection=collection,
+            page=page,
+            max_page=max_page,
+            per_page=per_page,
+        )
 
 @image_display.route('/collections=<collection>')
 @login_required
