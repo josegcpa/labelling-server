@@ -243,18 +243,9 @@ def no_authorisation():
 @image_display.route('/image/<int:picture_id>.png')
 @login_required
 def image_png(picture_id: int):
-    collection = request.args.get('collection', None)
-    if collection == "null":
-        collection = None
-    if collection is None:
-        collection = session.get("collection", None)
     with sqlite3.connect(get_db_name()) as conn_images:
-        if collection is not None:
-            sql = "SELECT picture FROM images WHERE id = :id AND collection = :collection"
-            param = {'id': picture_id, 'collection': collection}
-        else:
-            sql = "SELECT picture FROM images WHERE id = :id"
-            param = {'id': picture_id}
+        sql = "SELECT picture FROM images WHERE id = :id"
+        param = {'id': picture_id}
         row = conn_images.execute(sql, param).fetchone()
         if row is None:
             abort(404)
