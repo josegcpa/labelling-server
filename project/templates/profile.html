@@ -47,7 +47,7 @@
   .style("display","inline-block")
   .attr("height","150px")
   .attr("src",function(d) {
-    return "data:image/png;base64,"+d['image']
+    return "/image/" + d['idx'] + ".png?collection=null"
   })
   .on("mouseover",function(e,d) {
     tooltip

@@ -35,7 +35,7 @@
               <div class="positioning"></div>
               <img height="140px" width="140px" style="vertical-align: middle;display:inline-block;"
                 id="image{{ image_idxs[idx] }}" class="w-auto card-img-top smallimg mx-auto image"
-                src="data:image/png;base64,{{ image_blobs[idx] }}">
+                src="{{ url_for('image.image_png', picture_id=image_idxs[idx], collection=collection) }}">
             </div>
           <div style="height:60px" class="card-body" id="label{{ image_idxs[idx] }}">
             <select class="form-control form-control-sm" id="label_form{{ image_idxs[idx] }}">

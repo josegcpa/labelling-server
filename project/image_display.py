@@ -1,5 +1,6 @@
 import sqlite3
-from flask import Blueprint, render_template, redirect, url_for, request, session
+import base64
+from flask import Blueprint, render_template, redirect, url_for, request, session, Response, abort
 from flask_login import login_required, current_user
 from . import db,get_db_name
 from .classification_hierarchies import label_hierarchy, labels_dict
@@ -60,6 +61,8 @@ def get_first_with_no_label():
             "SELECT picture_id FROM labels WHERE user_id = :user_id", 
             {"user_id": user_id})
     idxs = [x[0] for x in idxs]
+    if len(idxs) == 0:
+        return 0
     return max(idxs)
         
 
@@ -236,6 +239,33 @@ def no_authorisation():
     return render_template('no-authorisation.html')
 
 # Serving images
+
+@image_display.route('/image/<int:picture_id>.png')
+@login_required
+def image_png(picture_id: int):
+    collection = request.args.get('collection', None)
+    if collection == "null":
+        collection = None
+    if collection is None:
+        collection = session.get("collection", None)
+    with sqlite3.connect(get_db_name()) as conn_images:
+        if collection is not None:
+            sql = "SELECT picture FROM images WHERE id = :id AND collection = :collection"
+            param = {'id': picture_id, 'collection': collection}
+        else:
+            sql = "SELECT picture FROM images WHERE id = :id"
+            param = {'id': picture_id}
+        row = conn_images.execute(sql, param).fetchone()
+        if row is None:
+            abort(404)
+        b64_str = row[0].decode('utf-8')
+    try:
+        img_bytes = base64.b64decode(b64_str)
+    except Exception:
+        abort(404)
+    resp = Response(img_bytes, mimetype='image/png')
+    resp.headers['Cache-Control'] = 'public, max-age=43200'
+    return resp
 
 @image_display.route('/images_label',methods=['POST'])
 @login_required
