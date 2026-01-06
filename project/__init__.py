@@ -1,6 +1,8 @@
-from flask import Flask
+import hashlib
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_compress import Compress
 
 def get_db_name():
     with open("db_name") as o:
@@ -28,6 +30,15 @@ def create_app():
         # since the user_id is just the primary key of our user table, use it in the query for the user
         return User.query.get(int(user_id))
 
+    @app.after_request
+    def add_etag(response):
+        if response.mimetype == "text/html":
+            body = response.get_data()
+            etag = hashlib.md5(body).hexdigest()
+            response.set_etag(etag)
+            response.make_conditional(request)
+        return response
+
     # blueprint for auth routes in our app
     from .auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint)
@@ -41,5 +52,10 @@ def create_app():
 
     from .admin import admin_blueprint as admin_blueprint
     app.register_blueprint(admin_blueprint)
+
+    Compress(app)
+    
+    app.config['COMPRESS_ALGORITHM'] = ['br', 'gzip']
+    app.config['COMPRESS_LEVEL'] = 6 
 
     return app

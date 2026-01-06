@@ -118,6 +118,28 @@ def extract_picture(conn, picture_id: int, collection: str | None):
         except:
             return 0,0
 
+def extract_pictures(conn, picture_ids: list[int], collection: str | None):
+    with sqlite3.connect(get_db_name()) as conn_images:
+        if not picture_ids:
+            return []
+
+        placeholders = ",".join(["?"] * len(picture_ids))
+        if collection is not None:
+            sql = f"SELECT id, picture, name FROM images WHERE id IN ({placeholders}) AND collection = ?"
+            params = [*picture_ids, collection]
+        else:
+            sql = f"SELECT id, picture, name FROM images WHERE id IN ({placeholders})"
+            params = list(picture_ids)
+        try:
+            cur = conn_images.cursor()
+            cur.execute(sql, params)
+            rows = cur.fetchall()
+            by_id = {int(r[0]): (r[1].decode('utf-8'), r[2]) for r in rows}
+            return [by_id.get(int(pid), (0, 0)) for pid in picture_ids]
+        except:
+            return []
+
+
 def extract_label(conn, picture_id, labels_dict):
     with sqlite3.connect(get_db_name()) as conn_images:
         sql = "SELECT label FROM labels WHERE picture_id = :picture_id AND user_id = :user_id"
@@ -199,8 +221,7 @@ def images(page):
             image_collection_correspondence = get_image_collection_correspondence()
         idxs = [image_collection_correspondence[collection].get(i - 1, None) for i in idxs]
     with sqlite3.connect(get_db_name()) as conn_images:
-        images = [extract_picture(conn_images, i, collection)
-                  for i in idxs]
+        images = extract_pictures(conn_images, idxs, collection)
         image_blobs = [x[0] for x in images]
         names = [x[1] for x in images]
 
