@@ -243,6 +243,16 @@ def no_authorisation():
 @image_display.route('/image/<int:picture_id>.png')
 @login_required
 def image_png(picture_id: int):
+    """
+    Returns a response with the image with a given ``picture_id`` as retrieved
+    from the database.
+    
+    Args:
+        picture_id (int): The ID of the image to return.
+        
+    Return:
+        Response: A response with the image with a given ``picture_id``.
+    """
     with sqlite3.connect(get_db_name()) as conn_images:
         sql = "SELECT picture FROM images WHERE id = :id"
         param = {'id': picture_id}
