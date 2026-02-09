@@ -56,11 +56,17 @@ def update_n_labelled_images():
     
 def get_first_with_no_label():
     user_id = current_user.id
+    collection = session.get('collection')
+    if collection == "null":
+        collection = None
     with sqlite3.connect(get_db_name()) as conn:
         idxs = conn.execute(
             "SELECT picture_id FROM labels WHERE user_id = :user_id", 
             {"user_id": user_id})
-    idxs = [x[0] for x in idxs]
+    if collection is not None:
+        idxs = [image_collection_correspondence[collection][x[0] - 1] for x in idxs]
+    else:
+        idxs = [x[0] for x in idxs]
     if len(idxs) == 0:
         return 0
     return max(idxs)
@@ -283,7 +289,6 @@ def get_images_label():
 @image_display.route('/images=<page>')
 @login_required
 def images(page):
-    global image_collection_correspondence
     collection = session.get("collection", None)
     if request.args.get('collection'):
         collection = request.args.get('collection')
