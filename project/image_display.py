@@ -64,7 +64,8 @@ def get_first_with_no_label():
             "SELECT picture_id FROM labels WHERE user_id = :user_id", 
             {"user_id": user_id})
     if collection is not None:
-        idxs = [image_collection_correspondence[collection][x[0] - 1] for x in idxs]
+        icc = image_collection_correspondence[collection]
+        idxs = [icc[x[0] - 1] for x in idxs if x[0] - 1 in icc]
     else:
         idxs = [x[0] for x in idxs]
     if len(idxs) == 0:
